@@ -180,7 +180,7 @@
     background-color: white;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     z-index: 10;
-    width: 850px;
+    width: 810px;
     max-height: 400px;
     overflow-y: auto;
     border: 1px solid #d1d5db;
@@ -208,7 +208,6 @@
     gap: 0.5rem;
     cursor: pointer;
     white-space: nowrap;
-    margin-left: 3rem;
   }
 
   .dropdown-section input {
@@ -234,13 +233,29 @@
     border-color: #2563eb;
   }
 
+  /* Specific Styles for Amenities (2 columns) */
+  .dropdown-section.amenities {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 columns for Amenities */
+    gap: 0.5rem;
+    margin-top: 0.5rem; /* Add spacing between the title and options */
+  }
+
+  /* Specific Styles for Barangay (3 columns) */
+  .dropdown-section.barangay {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns for Barangay */
+    gap: 0.5rem;
+    margin-top: 0.5rem; /* Add spacing between the title and options */
+  }
+
   .cards-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
-  padding: 1rem;  /* Reduce the padding here */
-  margin-top: -1rem;  /* Reduce the space above the apartment cards */
-}
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    padding: 1rem; /* Reduce the padding here */
+    margin-top: -1rem; /* Reduce the space above the apartment cards */
+  }
 
   .card-footer {
     display: flex;
@@ -250,12 +265,12 @@
 
   /* Carousel styling */
   .carousel-container {
-  width: 100%;  /* Adjust the width of the carousel */
-  max-width: 1000px;  /* Maximum width */
-  height: 400px;  /* Set a height */
-  margin: 0 auto;  /* Center the carousel */
-  margin-bottom: -1rem;  /* Add a little margin at the bottom */
-}
+    width: 100%; /* Adjust the width of the carousel */
+    max-width: 1000px; /* Maximum width */
+    height: 400px; /* Set a height */
+    margin: 0 auto; /* Center the carousel */
+    margin-bottom: -1rem; /* Add a little margin at the bottom */
+  }
 </style>
 
 <!-- Search Bar -->
@@ -307,10 +322,10 @@
 <div class="cards-container">
   {#each apartments as apartment}
     <Card img={apartment.img}>
-      <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+      <h5 class="mb-2 text-2xl font-bold tracking-tight dark:text-white">
         {apartment.title}
       </h5>
-      <p class="mb-3 font-normal text-gray-700 dark:text-gray-400 leading-tight">
+      <p class="mb-3 font-normal dark:text-gray-400 leading-tight">
         {apartment.description}
       </p>
       <div class="flex items-center mb-2">
@@ -332,7 +347,7 @@
         {/each}
       </div>
       <div class="card-footer">
-        <p class="text-gray-900 font-bold">{apartment.price}</p>
+        <p class="dark:text-white font-bold">{apartment.price}</p>
         <Button style="background-color: #ff6a00">
           Read more
           <ArrowRightOutline class="w-6 h-6 ms-2 text-white" />
