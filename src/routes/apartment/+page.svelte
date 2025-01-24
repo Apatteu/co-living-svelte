@@ -106,180 +106,208 @@
 </script>
 
 <style>
-  /* Search Bar */
+ /* Search Bar */
+.search-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  flex-wrap: wrap; /* Allow wrapping */
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  width: 50%;
+}
+
+.input-wrapper input {
+  flex: 1;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  outline: none;
+}
+
+.input-wrapper input:focus {
+  border: 1px solid #ff6a00;
+  box-shadow: 0 0 4px #ff6a00;
+  border-radius: 0.375rem;
+}
+
+.input-wrapper button {
+  background-color: #ff6a00;
+  color: white;
+  border: none;
+  padding: 0.64rem 1rem;
+  cursor: pointer;
+}
+
+.input-wrapper button:hover {
+  background-color: #e65b00;
+}
+
+/* Dropdown Styles */
+.dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-button {
+  background-color: white;
+  color: #333;
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  text-align: left;
+  width: 165px; /* Original width */
+}
+
+.dropdown-button:focus {
+  border: 1px solid #ff6a00;
+  border-radius: 0.375rem;
+  outline: none;
+}
+
+.dropdown-content {
+  display: block;
+  position: absolute;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  width: 810px;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 1rem;
+}
+
+.dropdown-section {
+  padding: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dropdown-section-title {
+  font-weight: bold;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.dropdown-section label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dropdown-section input {
+  margin: 0;
+}
+
+.dropdown-section input[type='radio'],
+.dropdown-section input[type='checkbox'] {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  background-color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  margin: 0;
+}
+
+.dropdown-section input[type='radio']:checked,
+.dropdown-section input[type='checkbox']:checked {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+/* Cards Layout */
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  margin-top: -1rem;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Carousel styling */
+.carousel-container {
+  width: 100%;
+  max-width: 1000px;
+  height: 400px;
+  margin: 0 auto;
+  margin-bottom: -1rem;
+}
+
+/* Media Queries for Responsiveness */
+/* For mobile devices */
+@media (max-width: 768px) {
   .search-bar {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 1rem 0;
+    flex-direction: column; /* Stack items vertically */
+    gap: .1rem;
   }
 
   .input-wrapper {
-    display: flex;
-    align-items: center;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    overflow: hidden;
-    width: 50%;
+    width: 100%; /* Full-width input on mobile */
+    order: -1; /* Move search input and button to the top */
   }
 
-  .input-wrapper input {
-    flex: 1;
-    border: none;
-    border-radius: 0.375rem;
-    padding: 0.5rem 1rem;
-    outline: none;
-  }
-
-  .input-wrapper input:focus {
-    border: 1px solid #ff6a00;
-    box-shadow: 0 0 4px #ff6a00;
-    border-radius: 0.375rem;
-  }
-
-  .input-wrapper button {
-    background-color: #ff6a00;
-    color: white;
-    border: none;
-    padding: 0.64rem 1rem;
-    cursor: pointer;
-  }
-
-  .input-wrapper button:hover {
-    background-color: #e65b00;
-  }
-
-  /* Dropdown Styles */
   .dropdown-container {
-    position: relative;
-    display: inline-block;
+    width: 100%; /* Make dropdown take full width */
+    margin-top: .5rem; /* Space between dropdown and other elements */
+    order: 0; /* Position dropdown below search input */
   }
 
   .dropdown-button {
-    background-color: white;
-    color: #333;
-    padding: 0.5rem 1rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    cursor: pointer;
-    text-align: left;
-    width: 165px;
-  }
-
-  .dropdown-button:focus {
-    border: 2px solid #ff6a00;
-    box-shadow: 0 0 4px #ff6a00;
-    outline: none;
-    border-radius: 0.375rem;
+    width: 50%; /* Full-width dropdown button on mobile */
   }
 
   .dropdown-content {
-    display: block;
-    position: absolute;
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    z-index: 10;
-    width: 810px;
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    padding: 1rem;
-  }
-
-  .dropdown-section {
-    padding: 0.5rem 0;
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .dropdown-section-title {
-    font-weight: bold;
     width: 100%;
-    margin-bottom: 0.5rem;
-  }
-
-  .dropdown-section label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-
-  .dropdown-section input {
-    margin: 0;
-  }
-
-  .dropdown-section input[type='radio'],
-  .dropdown-section input[type='checkbox'] {
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 2px solid #d1d5db;
-    background-color: white;
-    cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-    margin: 0;
-  }
-
-  .dropdown-section input[type='radio']:checked,
-  .dropdown-section input[type='checkbox']:checked {
-    background-color: #2563eb;
-    border-color: #2563eb;
-  }
-
-  /* Specific Styles for Amenities (2 columns) */
-  .dropdown-section.amenities {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 columns for Amenities */
-    gap: 0.5rem;
-    margin-top: 0.5rem; /* Add spacing between the title and options */
-  }
-
-  /* Specific Styles for Barangay (3 columns) */
-  .dropdown-section.barangay {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 columns for Barangay */
-    gap: 0.5rem;
-    margin-top: 0.5rem; /* Add spacing between the title and options */
+    padding: 0.5rem;
   }
 
   .cards-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1rem;
-    padding: 1rem; /* Reduce the padding here */
-    margin-top: -1rem; /* Reduce the space above the apartment cards */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Single column cards on very small screens */
+  }
+
+  .carousel-container {
+    height: 250px; /* Adjust height for mobile devices */
   }
 
   .card-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column; /* Stack footer elements on small screens */
+    align-items: flex-start; /* Align items to the start */
   }
+}
 
-  /* Carousel styling */
-  .carousel-container {
-    width: 100%; /* Adjust the width of the carousel */
-    max-width: 1000px; /* Maximum width */
-    height: 400px; /* Set a height */
-    margin: 0 auto; /* Center the carousel */
-    margin-bottom: -1rem; /* Add a little margin at the bottom */
-  }
 </style>
 
 <!-- Search Bar -->
 <div class="search-bar">
   <!-- Dropdown -->
   <div class="dropdown-container">
-    <div class="dropdown-button" on:click={() => (showDropdown = !showDropdown)}>
+    <div class="dropdown-button" on:click={() => (showDropdown = !showDropdown)} tabindex="0">
       All Categories ⮟
     </div>
+    
 
     {#if showDropdown}
       <div class="dropdown-content">
@@ -312,20 +340,23 @@
 
 <!-- Carousel Component -->
 <div class="carousel-container">
-  <Carousel {images} let:Indicators let:Controls>
-    <Controls />
-    <Indicators />
+  <Carousel {images} let:Controls>
+    {#if !showDropdown} <!-- Only show controls when dropdown is not active -->
+      <Controls />
+    {/if}
   </Carousel>
 </div>
-
 <!-- Apartment Cards -->
 <div class="cards-container">
   {#each apartments as apartment}
-    <Card img={apartment.img}>
-      <h5 class="mb-2 text-2xl font-bold tracking-tight dark:text-white">
+    <Card
+      img={apartment.img}
+      style="background-color: white; border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px;"
+    >
+      <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900">
         {apartment.title}
       </h5>
-      <p class="mb-3 font-normal dark:text-gray-400 leading-tight">
+      <p class="mb-3 font-normal text-gray-600 leading-tight">
         {apartment.description}
       </p>
       <div class="flex items-center mb-2">
@@ -347,7 +378,7 @@
         {/each}
       </div>
       <div class="card-footer">
-        <p class="dark:text-white font-bold">{apartment.price}</p>
+        <p class="text-gray-900 font-bold">{apartment.price}</p>
         <Button style="background-color: #ff6a00">
           Read more
           <ArrowRightOutline class="w-6 h-6 ms-2 text-white" />

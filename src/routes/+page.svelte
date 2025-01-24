@@ -14,7 +14,6 @@
 </script>
 
 <style>
-
   .container {
     display: flex;
     justify-content: space-between;
@@ -22,6 +21,7 @@
     height: 80vh;
     padding: 2rem;
     box-sizing: border-box;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
   }
 
   .left-side {
@@ -56,6 +56,7 @@
     max-width: 100%;
     margin: 0 auto;
     flex-shrink: 0;
+    position: relative;
   }
 
   .create-account h2 {
@@ -154,7 +155,97 @@
     font-size: 0.85rem;
     margin-top: 0.5rem;
   }
+
+  /* Media Queries for Responsiveness */
+
+  /* Tablet screens (portrait) and smaller */
+  @media screen and (max-width: 768px) {
+    .container {
+      flex-direction: column; /* Stack the left side and create account form */
+      align-items: center;
+      height: auto;
+      padding: 1rem;
+    }
+
+    .left-side {
+      width: 100%;
+      padding-right: 0;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .left-side h2 {
+      font-size: 3rem; /* Smaller font size for mobile */
+    }
+
+    .create-account {
+      width: 90%; /* Take up more space on small screens */
+      max-width: 400px;
+      height: auto;
+      padding: 2rem;
+    }
+
+    .form-group {
+      width: 100%;
+      max-width: 100%;
+      margin: 1.5rem 0; /* Adjust margin for small screens */
+    }
+
+    .create-account h2 {
+      font-size: 1.25rem; /* Slightly smaller heading */
+    }
+
+    .forgot-password {
+      font-size: 0.8rem; /* Slightly smaller font for the link */
+    }
+
+    .create-account button {
+      width: 100%;
+    }
+
+    .links {
+      font-size: 0.8rem;
+    }
+  }
+
+  /* Mobile screens (portrait) */
+  @media screen and (max-width: 480px) {
+    .container {
+      padding: 1rem;
+    }
+
+    .left-side h2 {
+      font-size: 2.5rem;
+    }
+
+    .create-account {
+      width: 100%;
+      max-width: 100%;
+      padding: 1.5rem;
+    }
+
+    .form-group {
+      margin: 1.5rem 0;
+    }
+
+    .create-account button {
+      width: 100%;
+    }
+
+    .create-account h2 {
+      font-size: 1.2rem;
+    }
+
+    .forgot-password {
+      font-size: 0.75rem;
+    }
+
+    .links {
+      font-size: 0.75rem;
+    }
+  }
 </style>
+
 
 <div class="container">
   <div class="left-side">

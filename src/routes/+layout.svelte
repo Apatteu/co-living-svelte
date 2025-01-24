@@ -71,157 +71,180 @@
 
 <style>
 	:global(body) {
-		font-family: 'Poppins', sans-serif;
-		margin: 0;
-		padding: 0;
-		background-color: #dbdbdb;
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-	}
+	font-family: 'Poppins', sans-serif;
+	margin: 0;
+	padding: 0;
+	background-color: #dbdbdb;
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+}
 
-	.main-wrapper.navbar1-active {
-		background-image: url('/image/background.png'); /* Path to your background image */
-		background-size: 135%; /* Adjust size to 135% of original width and height */
-		background-position: top -180px center; /* Push the background image higher by 50px */
-		background-repeat: no-repeat; /* Prevent image from repeating */
-		background-attachment: fixed; /* Optional: Fix the background on scroll */
-		padding-bottom: 2rem; /* Ensures the content is not hidden behind the navbar */
-	}
+.main-wrapper.navbar1-active {
+	background-image: url('/image/background.png'); /* Path to your background image */
+	background-size: 135%; /* Adjust size to 135% of original width and height */
+	background-position: top -180px center; /* Push the background image higher by 50px */
+	background-repeat: no-repeat; /* Prevent image from repeating */
+	background-attachment: fixed; /* Optional: Fix the background on scroll */
+	padding-bottom: 2rem; /* Ensures the content is not hidden behind the navbar */
+}
 
-	.navbar {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		background-color: #515739;
-		padding: 0.3rem 1rem; /* Reduced padding for smaller navbar */
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-		width: 100%;
-		position: relative;
-		z-index: 10;
-	}
+.navbar {
+	position: fixed; /* Fix the navbar at the top */
+	top: 0; /* Align to the top */
+	left: 0; /* Align to the left */
+	width: 100%; /* Span the full width */
+	z-index: 1000; /* Ensure the navbar is on top of other elements */
+	background-color: #515739; /* Background color */
+	padding: 0.3rem 1rem; /* Adjust padding for a smaller navbar */
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+}
 
-	.navbar a {
-		color: #ffffff;
-		text-decoration: none;
-		padding: 0.5rem 1rem; /* Reduced padding */
-		font-size: 0.9rem; /* Reduced font size */
-		border-radius: 0.5rem;
-		display: inline-block;
-		transition: transform 0.2s, background-color 0.2s, box-shadow 0.3s;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem; /* Space between icon and text */
-	}
+.navbar a {
+	color: #ffffff;
+	text-decoration: none;
+	padding: 0.5rem 1rem; /* Adjusted padding */
+	font-size: 0.9rem; /* Reduced font size */
+	border-radius: 0.5rem;
+	display: inline-block;
+	transition: transform 0.2s, background-color 0.2s, box-shadow 0.3s;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem; /* Space between icon and text */
+}
 
-	.navbar a:hover {
-		background-color: #7a8357;
-		color: #ffffff;
-		box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-		transform: translateY(-3px);
-	}
+.navbar a:hover {
+	background-color: #7a8357;
+	color: #ffffff;
+	box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+	transform: translateY(-3px);
+}
 
-	.navbar .logo {
-		font-size: 1.3rem; /* Reduced logo size */
-		font-weight: bold;
-		transition: transform 0.2s, color 0.2s;
-	}
+.navbar .logo {
+	font-size: 1.3rem; /* Adjusted logo size */
+	font-weight: bold;
+	transition: transform 0.2s, color 0.2s;
+}
 
-	.navbar-links {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		position: relative; /* Ensure navbar is not affected by profile hover */
-	}
+.navbar-links {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	position: relative;
+}
 
-	.profile-link {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
+.navbar-links.open {
+	display: flex; /* Ensure links are displayed when open */
+	flex-direction: column; /* Stack links vertically in responsive mode */
+	background-color: #515739; /* Match the navbar background */
+	width: 100%; /* Full width in responsive mode */
+	padding: 0.5rem 1rem; /* Add padding for links in mobile mode */
+	position: absolute; /* Position links below the navbar */
+	top: 100%; /* Ensure links are placed below the navbar */
+	left: 0;
+	box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+	border-radius: 0 0 0.5rem 0.5rem; /* Rounded corners at the bottom */
+}
 
-	.logout-button {
-		background: none;
-		border: none;
-		color: #ffffff;
-		font-size: 0.9rem; /* Reduced font size */
-		cursor: pointer;
-		padding: 0.5rem 1rem; /* Reduced padding */
-		transition: transform 0.2s, background-color 0.2s, box-shadow 0.3s;
-	}
+.profile-link {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
 
-	.logout-button:hover {
-		background-color: #7a8357;
-		border-radius: 7px;
-		box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-		transform: translateY(-3px);
-	}
+.logout-button {
+	color: #ffffff;
+	text-decoration: none;
+	padding: 0.5rem 1rem; /* Adjusted padding */
+	font-size: 0.9rem; /* Adjusted font size */
+	border-radius: 0.5rem;
+	display: inline-block;
+	transition: transform 0.2s, background-color 0.2s, box-shadow 0.3s;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem; /* Space between icon and text */
+}
 
-	.burger {
-		display: none;
-		flex-direction: column;
-		cursor: pointer;
-		background: none;
-		border: none;
-		position: absolute;
-		top: 0.3rem; /* Adjusted to make the burger smaller */
-		right: 1rem; /* Adjusted position */
-	}
+.logout-button:hover {
+	background-color: #7a8357;
+	color: #ffffff;
+	box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+	transform: translateY(-3px);
+}
 
-	.line {
-		width: 18px; /* Reduced line width */
-		height: 2px;
-		background-color: #ffffff;
-		margin: 3px 0;
-		transition: 0.3s;
-	}
+.burger {
+	display: none;
+	flex-direction: column;
+	cursor: pointer;
+	background: none;
+	border: none;
+	position: absolute;
+	top: 0.3rem; /* Adjusted for better alignment */
+	right: 1rem;
+}
 
-	.main-content {
-		flex: 1;
-		padding: 2rem;
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-start; /* Adjust alignment */
-		min-height: 0; /* Prevents flex container from shrinking */
-	}
+.burger .line {
+	width: 18px; /* Adjusted line size */
+	height: 2px;
+	background-color: #ffffff;
+	margin: 3px 0;
+	transition: 0.3s;
+}
 
-	@media (max-width: 768px) {
-		.navbar {
-			flex-direction: column;
-			align-items: flex-start;
-		}
+.main-content {
+	flex: 1;
+	padding: 5rem 2rem; /* Adjust padding to account for fixed navbar height */
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-start; /* Adjust alignment */
+	min-height: 0; /* Prevents flex container from shrinking */
+}
 
-		.burger {
-			display: flex;
-			top: 1rem;
-			right: 1.5rem;
-		}
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-		.navbar-links {
-			display: none;
-			flex-direction: column;
-			width: 100%;
-		}
+  .burger {
+    display: flex; /* Show burger menu on smaller screens */
+    top: 1rem;
+    right: 1.5rem;
+  }
 
-		.navbar-links.open {
-			display: flex;
-		}
+  .navbar-links {
+    display: none; /* Default state: hidden */
+  }
 
-		.navbar a {
-			width: 100%;
-			text-align: left;
-			padding: 1rem;
-		}
-	}
+  .navbar-links.open {
+    display: flex; /* Show links when menu is open */
+  }
 
-	@media (max-width: 480px) {
-		.navbar .logo {
-			font-size: 1.1rem; /* Reduced logo size for smaller screens */
-		}
+  .navbar-links a {
+    width: 100%; /* Full-width links in mobile mode */
+    text-align: left;
+    padding: 1rem;
+  }
 
-		.main-content {
-			padding: 1rem;
-		}
-	}
+  .logout-button {
+    width: 100%; /* Full-width logout button in mobile mode */
+    text-align: left;
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar .logo {
+    font-size: 1.1rem; /* Adjusted logo size for smaller screens */
+  }
+
+  .main-content {
+    padding: 5rem 1rem; /* Adjusted padding for smaller screens */
+  }
+}
+
 </style>

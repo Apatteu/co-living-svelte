@@ -65,12 +65,20 @@
         monthTitle = `${new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} ${currentYear}`;
     }
 
-    function selectDate(day: number | null): void {
-        if (day !== null) {
-            activeDate = day;
-        }
+    let selectedDate: { day: number | null, month: number, year: number } = {
+    day: null,
+    month: currentMonth,
+    year: currentYear
+};
+function selectDate(day: number | null): void {
+    if (day !== null) {
+        selectedDate = {
+            day: day,
+            month: currentMonth,
+            year: currentYear
+        };
     }
-
+}
     let calendarDates: CalendarDates = getCalendarDates(currentYear, currentMonth);
     let monthTitle: string = `${new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} ${currentYear}`;
 
@@ -80,223 +88,302 @@
 </script>
 
 <style>
-    :global(html, body) {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        background-color: #DBDBDB;
-    }
-
-    h2 {
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
-    }
-
-    .dashboard {
-        display: grid;
-        grid-template-areas:
-            "notifications my-rent"
-            "maintenance my-rent";
-        grid-template-columns: 3fr 1.5fr;
-        grid-template-rows: auto 1fr;
-        gap: 1rem;
-        height: 100vh;
-        padding: 1rem;
-    }
-
-    .box {
-        background-color: #ECEBEB;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .notifications {
-        grid-area: notifications;
-        padding: 1.5rem;
-    }
-
-    .maintenance {
-        grid-area: maintenance;
-        padding: 1.5rem;
-    }
-
-    .my-rent {
-        grid-area: my-rent;
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-    }
-
-    .calendar-container {
-        margin-top: 1rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .calendar-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-    }
-
-    .calendar-header button {
-        background-color: transparent;
-        border: none;
-        cursor: pointer;
-        font-size: 1.2rem;
-        color: #333;
-    }
-
-    .calendar-title {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: #333;
-    }
-
-    .visual-calendar {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 1rem;
-        text-align: center;
-    }
-
-    .visual-calendar th,
-    .visual-calendar td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        width: 14%;
-    }
-
-    .visual-calendar th {
-        background-color: #f4f4f4;
-    }
-
-    .visual-calendar td {
-        background-color: #fff;
-        cursor: pointer;
-    }
-
-    .visual-calendar td.active {
-        background-color: #FF6600;
-        color: white;
-        font-weight: bold;
-    }
-
-    .visual-calendar td.selected {
-    border: 2px solid #FF6600; /* Highlight border color */
+    /* Base styles for the entire application */
+:global(html, body) {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #DBDBDB;
 }
 
+/* General Heading Styles */
+h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 1rem;
-    }
+/* Dashboard Grid Layout */
+.dashboard {
+    display: grid;
+    grid-template-areas:
+        "notifications my-rent"
+        "maintenance my-rent";
+    grid-template-columns: 3fr 1.5fr;
+    grid-template-rows: auto 1fr;
+    gap: 1rem;
+    height: 100vh;
+    padding: 1rem;
+}
 
-    table td,
-    table th {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: left;
-    }
+/* General Box Styling */
+.box {
+    background-color: #ECEBEB;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+}
 
-    table th {
-        background-color: #f4f4f4;
-    }
+/* Notifications Section */
+.notifications {
+    grid-area: notifications;
+    padding: 1.5rem;
+}
 
-    /* Notifications Styling */
-    .notifications ul {
-        list-style-type: none;
-        padding: 0;
-        margin: 0;
-    }
+.notifications ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
 
-    .notification-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background-color: #f4f4f4;
-        padding: 0.5rem;
-        border-radius: 0.5rem;
-        margin-bottom: 0.5rem;
-    }
+.notification-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f4f4f4;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+}
 
-    .notification-date {
-        font-size: 0.9rem;
-        color: #666;
-        white-space: nowrap;
-    }
+.notification-date {
+    font-size: 0.9rem;
+    color: #666;
+    white-space: nowrap;
+}
 
-    /* Request Maintenance Styling */
-    .form-container {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        align-items: flex-start;
-    }
+/* Maintenance Section */
+.maintenance {
+    grid-area: maintenance;
+    padding: 1.5rem;
+}
 
-    .row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
 
-    .label {
-        font-weight: bold;
-        margin-right: 1rem;
-    }
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-    .input {
-        flex-grow: 1;
-        padding: 0.3rem;
-        background-color: #FFFFFF;
-        border: 1px solid #ECEBEB;
-        border-radius: 0.25rem;
-        height: 2rem;
-        display: flex;
-        align-items: center;
-    }
+.label {
+    font-weight: bold;
+    margin-right: 1rem;
+}
 
-    .input span {
-        display: block;
-        padding: 0.5rem;
-        line-height: 1.5;
-    }
+.input {
+    flex-grow: 1;
+    padding: 0.3rem;
+    background-color: #FFFFFF;
+    border: 1px solid #ECEBEB;
+    border-radius: 0.25rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+}
 
-    textarea {
-        width: 100%;
-        height: 10rem;
-        padding: 0.5rem;
-        border: 1px solid #ECEBEB;
-        border-radius: 0.25rem;
-        resize: none;
-    }
+.input span {
+    display: block;
+    padding: 0.5rem;
+    line-height: 1.5;
+}
 
-    button {
-        align-self: flex-end;
-        background-color: #FF6600;
-        color: white;
-        padding: 0.5rem 1rem;
-        border: none;
-        border-radius: 0.25rem;
-        cursor: pointer;
-    }
+textarea {
+    width: 100%;
+    height: 10rem;
+    padding: 0.5rem;
+    border: 1px solid #ECEBEB;
+    border-radius: 0.25rem;
+    resize: none;
+}
 
-    button:hover {
-        background-color: #FF5500;
-    }
-/* Remove default blue outline and apply custom border color on focus for textarea */
 textarea:focus {
     outline: none !important; /* Ensure outline is removed */
     box-shadow: none !important; /* Remove any box-shadow */
     border: 0.1rem solid #FF6600; /* Orange border with rem unit for focus */
 }
+
+button {
+    align-self: flex-end;
+    background-color: #FF6600;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #FF5500;
+}
+
+/* My Rent Section */
+.my-rent {
+    grid-area: my-rent;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.calendar-container {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.calendar-header button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.calendar-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.visual-calendar {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.visual-calendar th,
+.visual-calendar td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    width: 14%;
+}
+
+.visual-calendar th {
+    background-color: #f4f4f4;
+}
+
+.visual-calendar td {
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.visual-calendar td.active {
+    background-color: #FF6600;
+    color: white;
+    font-weight: bold;
+}
+
+.visual-calendar td.selected {
+    border: 2px solid #FF6600; /* Highlight border color */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+table td,
+table th {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+table th {
+    background-color: #f4f4f4;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 1024px) {
+    .dashboard {
+        grid-template-areas:
+            "notifications"
+            "my-rent"
+            "maintenance";
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        height: auto;
+    }
+
+    .my-rent, .maintenance, .notifications {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard {
+        padding: 0.5rem;
+    }
+
+    .calendar-container {
+        margin-top: 0.5rem;
+    }
+
+    .visual-calendar th,
+    .visual-calendar td {
+        padding: 4px;
+        font-size: 0.85rem;
+    }
+
+    .calendar-header {
+        font-size: 0.9rem;
+    }
+
+    .calendar-header button {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    h2 {
+        font-size: 1.25rem;
+    }
+
+    .dashboard {
+        gap: 0.5rem;
+    }
+
+    .box {
+        padding: 0.75rem;
+    }
+
+    .calendar-container {
+        margin-top: 0.5rem;
+    }
+
+    .visual-calendar th,
+    .visual-calendar td {
+        padding: 2px;
+        font-size: 0.75rem;
+    }
+
+    button {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+
+    textarea {
+        height: 7rem;
+    }
+}
+
 
 </style>
 
@@ -364,13 +451,14 @@ textarea:focus {
                         <tr>
                             {#each row as day}
                             <td
-                            class="{day !== null && day === currentDate.getDate() && currentMonth === currentDate.getMonth() && currentYear === currentDate.getFullYear() ? 'active' : ''} 
-                                   {day !== null && day === activeDate && currentMonth === new Date().getMonth() ? 'selected' : ''}"
-                            on:click={() => selectDate(day)}
-                        >
-                            {day || ''} 
-                        </td>
-                        
+    class="
+        {day !== null && day === currentDate.getDate() && currentMonth === currentDate.getMonth() && currentYear === currentYear ? 'active' : ''}
+    {day !== null && day === selectedDate.day && currentMonth === selectedDate.month && currentYear === selectedDate.year ? 'selected' : ''}
+"
+    on:click={() => selectDate(day)}
+>
+    {day || ''}
+</td>                   
                             {/each}
                         </tr>
                     {/each}

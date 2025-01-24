@@ -45,7 +45,7 @@
 		width: 410px;
 		max-width: 100%;
 		margin: 0 auto;
-		margin-top: -17px;
+		margin-top: 2rem;
 		position: relative;
 	}
 
@@ -135,7 +135,7 @@
 	@media (max-width: 768px) {
 		.create-account {
 			width: 90%;
-			margin-top: 0;
+			margin-top: 3rem;
 		}
 
 		.form-group {
