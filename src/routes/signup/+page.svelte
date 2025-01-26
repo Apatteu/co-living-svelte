@@ -1,24 +1,66 @@
 <script lang="ts">
+	import { toast } from 'svelte-sonner';
 	let username = '';
 	let email = '';
 	let password = '';
 	let confirmPassword = '';
 	let phone = '';
-	let role = '';
+	let role: 'TENANT' | 'LANDLORD' = 'TENANT';
+	let firstName = '';
+	let lastName = '';
 	let passwordError = '';
 	let phoneError = '';
+	let generalError = '';
 
-	function handleSubmit() {
+	async function handleSubmit() {
+		passwordError = '';
+		phoneError = '';
+		generalError = '';
+
 		if (password !== confirmPassword) {
-			passwordError = "Passwords do not match";
-		} else {
-			passwordError = '';
-			if (!/^\d{11}$/.test(phone)) {
-				phoneError = "Please enter a valid Philippine phone number (11 digits, starting with 09)";
+			passwordError = 'Passwords do not match';
+			toast.error('Password Mismatch', { description: 'Please ensure passwords match' });
+			return;
+		}
+
+		if (!/^\d{11}$/.test(phone)) {
+			phoneError = 'Please enter a valid Philippine phone number';
+			toast.error('Invalid Phone Number', {
+				description: 'Please enter a valid 11-digit phone number'
+			});
+			return;
+		}
+
+		try {
+			const response = await fetch('http://localhost:3000/api/auth/signup', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					email,
+					password,
+					role,
+					firstName,
+					lastName,
+					phone
+				})
+			});
+
+			const data = await response.json();
+			console.log(data);
+			if (response.ok) {
+				localStorage.setItem('token', data.token);
+				toast.success('Account Created', { description: 'You have successfully signed up!' });
+				window.location.href = '/signin';
 			} else {
-				phoneError = '';
-				console.log({ role, username, email, password, confirmPassword, phone });
+				generalError = data.message || 'Registration failed';
+				toast.error('Registration Failed', { description: generalError });
 			}
+		} catch (error) {
+			generalError = 'Network error. Please try again.';
+			toast.error('Network Error', { description: 'Please check your connection and try again' });
+			console.error('Signup error:', error);
 		}
 	}
 
@@ -28,12 +70,101 @@
 	}
 </script>
 
+<div class="create-account">
+	<h2>Create Your Account</h2>
+	<form on:submit|preventDefault={handleSubmit}>
+		<div class="form-group">
+			<label for="role">Role</label>
+			<select id="role" bind:value={role} required>
+				<option value="TENANT">Tenant</option>
+				<option value="LANDLORD">Landlord</option>
+			</select>
+		</div>
+
+		<div class="form-group">
+			<label for="firstName">First Name</label>
+			<input
+				id="firstName"
+				type="text"
+				placeholder="Enter your First Name"
+				bind:value={firstName}
+				required
+			/>
+		</div>
+
+		<div class="form-group">
+			<label for="lastName">Last Name</label>
+			<input
+				id="lastName"
+				type="text"
+				placeholder="Enter your Last Name"
+				bind:value={lastName}
+				required
+			/>
+		</div>
+
+		<div class="form-group">
+			<label for="email">Email Address</label>
+			<input id="email" type="email" placeholder="example@gmail.com" bind:value={email} required />
+		</div>
+
+		<div class="form-group">
+			<label for="phone">Phone Number</label>
+			<input
+				id="phone"
+				type="tel"
+				inputmode="numeric"
+				placeholder="09171234567"
+				bind:value={phone}
+				on:input={handlePhoneInput}
+				required
+			/>
+			{#if phoneError}
+				<div class="error-message">{phoneError}</div>
+			{/if}
+		</div>
+
+		<div class="form-group">
+			<label for="password">Password</label>
+			<input
+				id="password"
+				type="password"
+				placeholder="**********"
+				bind:value={password}
+				required
+			/>
+		</div>
+
+		<div class="form-group">
+			<label for="confirmPassword">Confirm Password</label>
+			<input
+				id="confirmPassword"
+				type="password"
+				placeholder="**********"
+				bind:value={confirmPassword}
+				required
+			/>
+		</div>
+
+		{#if passwordError}
+			<div class="error-message">{passwordError}</div>
+		{/if}
+		<div class="links">
+			<p>Already have an account? <a href="./signin">Signin</a></p>
+		</div>
+		<div class="action-buttons">
+			<a href="./" class="action-button close">Close</a>
+			<button class="action-button" type="submit">Submit</button>
+		</div>
+	</form>
+</div>
+
 <style>
 	:global(html, body) {
 		margin: 0;
 		padding: 0;
 		height: 100%;
-		background-color: #DBDBDB;
+		background-color: #dbdbdb;
 	}
 
 	.create-account {
@@ -157,86 +288,3 @@
 		}
 	}
 </style>
-
-<div class="create-account">
-	<h2>Create Your Account</h2>
-	<form on:submit|preventDefault={handleSubmit}>
-		<div class="form-group">
-			<label for="role">Role</label>
-			<select id="role" bind:value={role} required>
-				<option value="" disabled selected>Select your role</option>
-				<option value="Tenant">Tenant</option>
-				<option value="Landlord">Landlord</option>
-			</select>
-		</div>
-
-		<div class="form-group">
-			<label for="username">Username</label>
-			<input
-				id="username"
-				type="text"
-				placeholder="Enter your username"
-				bind:value={username}
-				required
-			/>
-		</div>
-
-		<div class="form-group">
-			<label for="email">Email Address</label>
-			<input
-				id="email"
-				type="email"
-				placeholder="example@gmail.com"
-				bind:value={email}
-				required
-			/>
-		</div>
-
-		<div class="form-group">
-			<label for="phone">Phone Number</label>
-			<input
-				id="phone"
-				type="tel"
-				inputmode="numeric"
-				placeholder="09171234567"
-				bind:value={phone}
-				on:input={handlePhoneInput}
-				required
-			/>
-			{#if phoneError}
-				<div class="error-message">{phoneError}</div>
-			{/if}
-		</div>
-
-		<div class="form-group">
-			<label for="password">Password</label>
-			<input
-				id="password"
-				type="password"
-				placeholder="**********"
-				bind:value={password}
-				required
-			/>
-		</div>
-
-		<div class="form-group">
-			<label for="confirmPassword">Confirm Password</label>
-			<input
-				id="confirmPassword"
-				type="password"
-				placeholder="**********"
-				bind:value={confirmPassword}
-				required
-			/>
-		</div>
-
-		{#if passwordError}
-			<div class="error-message">{passwordError}</div>
-		{/if}
-
-		<div class="action-buttons">
-			<a href="./" class="action-button close">Close</a>
-			<button class="action-button" type="submit">Submit</button>
-		</div>
-	</form>
-</div>
