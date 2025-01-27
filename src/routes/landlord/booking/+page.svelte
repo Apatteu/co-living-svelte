@@ -1,19 +1,21 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { toast } from 'svelte-sonner';
 
 	interface Booking {
 		id: string;
 		tenantName: string;
 		date: string;
 		unit: string;
+		status: string;
 	}
 
 	let bookings: Booking[] = [];
 
 	async function fetchBookingRequests() {
 		try {
-			const token = localStorage.getItem('token');
+			const token = localStorage.getItem('co-living-token');
 
 			if (!token) {
 				goto('/signin');
@@ -28,12 +30,8 @@
 				}
 			});
 
-			if (response.status === 401) {
-				goto('/signin');
-				return;
-			}
-
 			const data = await response.json();
+
 			bookings = data.map((booking: any) => ({
 				id: booking.id,
 				tenantName: booking.tenant.profile.firstName + ' ' + booking.tenant.profile.lastName,
@@ -42,22 +40,21 @@
 					month: 'long',
 					day: 'numeric'
 				}),
-				unit: booking.unit.title
+				unit: booking.unit.title,
+				status: booking.status
 			}));
+			console.log(bookings);
 		} catch (error) {
 			console.error('Failed to fetch booking requests:', error);
-			goto('/signin');
 		}
 	}
 
-	async function handleBookingStatus(bookingId: string, status: 'APPROVED' | 'REJECTED') {
+	async function handleBookingStatus(
+		bookingId: string,
+		status: 'APPROVED' | 'REJECTED' | 'CANCELLED'
+	) {
 		try {
-			const token = localStorage.getItem('token');
-
-			if (!token) {
-				goto('/signin');
-				return;
-			}
+			const token = localStorage.getItem('co-living-token');
 
 			const response = await fetch(`http://localhost:3000/api/bookings/${bookingId}/status`, {
 				method: 'PATCH',
@@ -68,11 +65,9 @@
 				body: JSON.stringify({ status })
 			});
 
-			if (response.status === 401) {
-				goto('/signin');
-				return;
+			if (response.ok) {
+				toast.success(`User ${status}`);
 			}
-
 			bookings = bookings.filter((booking) => booking.id !== bookingId);
 		} catch (error) {
 			console.error(`Failed to ${status.toLowerCase()} booking:`, error);
@@ -101,20 +96,31 @@
 					<div class="table-cell">{booking.tenantName}</div>
 					<div class="table-cell">{booking.date}</div>
 					<div class="table-cell">{booking.unit}</div>
-					<div class="action-cell table-cell">
-						<button
-							class="btn btn-accept"
-							on:click={() => handleBookingStatus(booking.id, 'APPROVED')}
-						>
-							Accept
-						</button>
-						<button
-							class="btn btn-decline"
-							on:click={() => handleBookingStatus(booking.id, 'REJECTED')}
-						>
-							Decline
-						</button>
-					</div>
+					{#if booking.status === 'APPROVED'}
+						<div class="action-cell table-cell">
+							<button
+								class="btn btn-decline"
+								on:click={() => handleBookingStatus(booking.id, 'CANCELLED')}
+							>
+								Cancel
+							</button>
+						</div>
+					{:else}
+						<div class="action-cell table-cell">
+							<button
+								class="btn btn-accept"
+								on:click={() => handleBookingStatus(booking.id, 'APPROVED')}
+							>
+								Accept
+							</button>
+							<button
+								class="btn btn-decline"
+								on:click={() => handleBookingStatus(booking.id, 'REJECTED')}
+							>
+								Decline
+							</button>
+						</div>
+					{/if}
 				</div>
 			{/each}
 		</div>

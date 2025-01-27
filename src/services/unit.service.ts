@@ -39,7 +39,7 @@ class UnitService {
 
 		const response = await fetch(`${this.baseUrl}`, {
 			headers: {
-				Authorization: `Bearer ${localStorage.getItem('token')}`
+				Authorization: `Bearer ${localStorage.getItem('co-living-token')}`
 			}
 		});
 		if (!response.ok) {
@@ -47,8 +47,7 @@ class UnitService {
 		}
 
 		const data = await response.json();
-		console.log(data);
-		return response.json();
+		return data;
 	}
 }
 

@@ -5,7 +5,6 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 
-
 	interface UserProfile {
 		firstName: string;
 		lastName: string;
@@ -28,8 +27,7 @@
 	const navbar2Prefixes = ['/tenant', '/landlord'];
 
 	$: isNavbar1 = navbar1Prefixes.some((prefix) => $page.url.pathname.startsWith(prefix));
-$: isNavbar2 = navbar2Prefixes.some((prefix) => $page.url.pathname.startsWith(prefix));
-
+	$: isNavbar2 = navbar2Prefixes.some((prefix) => $page.url.pathname.startsWith(prefix));
 
 	const fetchUser = async () => {
 		try {
@@ -52,7 +50,6 @@ $: isNavbar2 = navbar2Prefixes.some((prefix) => $page.url.pathname.startsWith(pr
 			}
 
 			const data = await response.json();
-			console.log(data);
 
 			userData = data;
 			userName = `${data.profile.firstName} ${data.profile.lastName}`;
@@ -62,7 +59,6 @@ $: isNavbar2 = navbar2Prefixes.some((prefix) => $page.url.pathname.startsWith(pr
 			} else if (data.isTenant && !$page.url.pathname.startsWith('/tenant')) {
 				goto('/tenant');
 			}
-			console.log(data);
 			return data;
 		} catch (error) {
 			goto('/signin');
@@ -99,69 +95,64 @@ $: isNavbar2 = navbar2Prefixes.some((prefix) => $page.url.pathname.startsWith(pr
 </svelte:head>
 
 {#if isNavbar1}
-<nav class="navbar navbar-guest">
-	<div class="navbar-container">
-		<a href="/" class="logo">Apateu</a>
-		<div class="menu-toggle" on:click={toggleMenu}>
-			<span class="bar"></span>
-			<span class="bar"></span>
-			<span class="bar"></span>
+	<nav class="navbar navbar-guest">
+		<div class="navbar-container">
+			<a href="/" class="logo">Apateu</a>
+			<div class="menu-toggle" on:click={toggleMenu}>
+				<span class="bar"></span>
+				<span class="bar"></span>
+				<span class="bar"></span>
+			</div>
+			<div class={`nav-menu ${isMenuOpen ? 'active' : ''}`}>
+				<a href="/about" class="nav-link">About</a>
+			</div>
 		</div>
-		<div class={`nav-menu ${isMenuOpen ? 'active' : ''}`}>
-			<a href="/about" class="nav-link">About</a>
-		</div>
-	</div>
-</nav>
-<img src="./image/background.png" alt="background" class="background" />
+	</nav>
+	<img src="./image/background.png" alt="background" class="background" />
 {/if}
 
 {#if isNavbar2}
-<nav class="navbar navbar-user">
-	<div class="navbar-container">
-		<a href="/" class="logo">Apateu</a>
-		<div class="menu-toggle" on:click={toggleMenu}>
-			<span class="bar"></span>
-			<span class="bar"></span>
-			<span class="bar"></span>
-		</div>
-		<div class={`nav-menu ${isMenuOpen ? 'active' : ''}`}>
-
+	<nav class="navbar navbar-user">
+		<div class="navbar-container">
 			{#if userData?.role === 'TENANT'}
-			<a href="/tenant/apartment" class="nav-link">Units</a>
-			<a href="/tenant/book" class="nav-link">Transactions</a>
-			<a href="/request" class="nav-link">Maintenance</a>
-					<a href="/landlord/bookings" class="nav-link" >
-						 Bookings
+				<a href="/tenant" class="logo">Apateu</a>
+				<div class={`nav-menu ${isMenuOpen ? 'active' : ''}`}>
+					<a href="/tenant/apartment" class="nav-link">Units</a>
+					<a href="/tenant/maintenance" class="nav-link">Maintenance</a>
+					<a href="/tenant/profile" class="nav-link profile-link">
+						<i class="fas fa-user-circle"></i>
+						<span>Profile</span>
 					</a>
-				{/if}
+					<button on:click={logOut} class="logout-btn">
+						<i class="fas fa-sign-out-alt"></i>
+						Logout
+					</button>
+				</div>
+			{/if}
 
 			{#if userData?.role === 'LANDLORD'}
-			<a href="/apartment" class="nav-link">Units</a>
-			<a href="/book" class="nav-link">Transactions</a>
-			<a href="/request" class="nav-link">Maintenance</a>
-					<a href="/landlord/bookings" class="bookings-link">
+				<a href="/landlord" class="logo">Apateu</a>
+				<div class={`nav-menu ${isMenuOpen ? 'active' : ''}`}>
+					<a href="/landlord/booking" class="nav-link">
 						<i class="fas fa-calendar-alt"></i> Bookings
 					</a>
-				{/if}
-			<a href="/profile" class="nav-link profile-link">
-				<i class="fas fa-user-circle"></i>
-				<span>Profile</span>
-				
-			<button on:click={logOut} class="logout-btn">
-				<i class="fas fa-sign-out-alt"></i>
-				Logout
-			</button>
+					<a href="/landlord/profile" class="nav-link profile-link">
+						<i class="fas fa-user-circle"></i>
+						<span>Profile</span>
+					</a>
+					<button on:click={logOut} class="logout-btn">
+						<i class="fas fa-sign-out-alt"></i>
+						Logout
+					</button>
+				</div>
+			{/if}
 		</div>
-	</div>
-</nav>
+	</nav>
 {/if}
 <main class="main-content">
 	<slot></slot>
 	<Toaster />
-</main>	
-
-
-
+</main>
 
 <style lang="postcss">
 	:global(body) {

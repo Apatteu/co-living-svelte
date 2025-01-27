@@ -1,212 +1,567 @@
 <script lang="ts">
+	import { writable, type Writable } from 'svelte/store';
 	import { onMount } from 'svelte';
 
-	// Define types for year, month, day
-	let currentDate: Date = new Date();
-	let currentYear: number = currentDate.getFullYear();
-	let currentMonth: number = currentDate.getMonth(); // 0 = January, 1 = February, ...
-	let activeDate: number = currentDate.getDate(); // Default active date to today's date
-
-	// Define the structure of the calendar
-	type CalendarRow = (number | null)[];
-	type CalendarDates = CalendarRow[];
-
-	function getCalendarDates(year: number, month: number): CalendarDates {
-		const firstDay: Date = new Date(year, month, 1);
-		const lastDay: Date = new Date(year, month + 1, 0);
-		const daysInMonth: number = lastDay.getDate();
-		const startingDay: number = firstDay.getDay(); // 0 - Sunday, 1 - Monday, ...
-
-		let calendar: CalendarDates = [];
-		let row: (number | null)[] = [];
-
-		for (let i = 0; i < startingDay; i++) {
-			row.push(null);
-		}
-
-		for (let i = 1; i <= daysInMonth; i++) {
-			row.push(i);
-			if (row.length === 7) {
-				calendar.push(row);
-				row = [];
-			}
-		}
-
-		while (row.length < 7) {
-			row.push(null);
-		}
-		calendar.push(row);
-
-		return calendar;
+	// Interfaces
+	interface MaintenanceRequest {
+		id: string;
+		unitId: string;
+		description: string;
+		status: 'pending' | 'in-progress' | 'completed';
+		photos: string[];
+		comments: string[];
+		createdAt: Date;
 	}
 
-	function previousMonth(): void {
-		if (currentMonth === 0) {
-			currentMonth = 11;
-			currentYear--;
-		} else {
-			currentMonth--;
-		}
-		updateCalendar();
+	interface Profile {
+		firstName: string;
+		lastName: string;
+		phone?: string;
+		address?: string;
 	}
 
-	function nextMonth(): void {
-		if (currentMonth === 11) {
-			currentMonth = 0;
-			currentYear++;
-		} else {
-			currentMonth++;
-		}
-		updateCalendar();
+	interface Unit {
+		id: string;
+		title: string;
 	}
 
-	function updateCalendar(): void {
-		calendarDates = getCalendarDates(currentYear, currentMonth);
-		monthTitle = `${new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} ${currentYear}`;
+	interface Notification {
+		id: string;
+		message: string;
+		isRead: boolean;
+		createdAt: string;
 	}
 
-	let selectedDate: { day: number | null; month: number; year: number } = {
-		day: null,
-		month: currentMonth,
-		year: currentYear
+	// Store definitions
+	const notifications: Writable<Notification[]> = writable([]);
+	const API_URL = 'http://localhost:3000/api';
+
+	// State
+	let requests: MaintenanceRequest[] = [];
+	let description = '';
+	let loading = true;
+	let currentUnit: Unit | null = null;
+	let profile: Profile | null = null;
+	let isLoading = true;
+	let error: string | null = null;
+	let isEditModalOpen = false;
+	let editedProfile: Profile = {
+		firstName: '',
+		lastName: '',
+		phone: '',
+		address: ''
 	};
-	function selectDate(day: number | null): void {
-		if (day !== null) {
-			selectedDate = {
-				day: day,
-				month: currentMonth,
-				year: currentYear
-			};
+
+	// Auth helper
+	function getAuthHeaders(): Headers {
+		const token = localStorage.getItem('co-living-token');
+		if (!token) throw new Error('No authentication token found');
+
+		return new Headers({
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json'
+		});
+	}
+
+	// API calls
+	async function fetchCurrentUnit(): Promise<void> {
+		try {
+			const response = await fetch(`${API_URL}/maintenance/current-unit`, {
+				headers: getAuthHeaders()
+			});
+			if (!response.ok) throw new Error('Failed to fetch unit');
+			currentUnit = await response.json();
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to fetch unit';
+			throw error;
 		}
 	}
-	let calendarDates: CalendarDates = getCalendarDates(currentYear, currentMonth);
-	let monthTitle: string = `${new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} ${currentYear}`;
 
-	onMount(() => {
-		updateCalendar();
+	async function fetchMaintenanceRequests(): Promise<void> {
+		try {
+			const response = await fetch(`${API_URL}/maintenance/tenant`, {
+				headers: getAuthHeaders()
+			});
+			if (!response.ok) throw new Error('Failed to fetch requests');
+
+			const data = await response.json();
+			requests = data.map((req: any) => ({
+				...req,
+				createdAt: new Date(req.createdAt)
+			}));
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to load maintenance requests';
+		}
+	}
+
+	async function fetchProfile(): Promise<void> {
+		try {
+			const response = await fetch(`${API_URL}/profile`, {
+				headers: getAuthHeaders()
+			});
+
+			if (!response.ok) throw new Error('Failed to fetch profile');
+			profile = await response.json();
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to fetch profile';
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	async function saveProfile(): Promise<void> {
+		try {
+			const response = await fetch(`${API_URL}/profile`, {
+				method: 'PUT',
+				headers: getAuthHeaders(),
+				body: JSON.stringify(editedProfile)
+			});
+
+			if (!response.ok) throw new Error('Failed to update profile');
+
+			profile = { ...editedProfile };
+			isEditModalOpen = false;
+			error = null;
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to update profile';
+		}
+	}
+
+	async function fetchNotifications(): Promise<void> {
+		try {
+			const response = await fetch(`${API_URL}/notifications`, {
+				headers: getAuthHeaders()
+			});
+
+			if (!response.ok) throw new Error('Failed to fetch notifications');
+			const data = await response.json();
+			notifications.set(data);
+		} catch (err) {
+			console.error('Error fetching notifications:', err);
+		}
+	}
+
+	function openEditModal(): void {
+		if (profile) {
+			editedProfile = { ...profile };
+			isEditModalOpen = true;
+		}
+	}
+
+	// Lifecycle
+	onMount(async () => {
+		try {
+			await Promise.all([
+				fetchCurrentUnit(),
+				fetchMaintenanceRequests(),
+				fetchProfile(),
+				fetchNotifications()
+			]);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to initialize dashboard';
+		} finally {
+			loading = false;
+		}
 	});
+
+	async function submitMaintenanceRequest(event: Event): Promise<void> {
+		event.preventDefault();
+
+		if (!description.trim()) {
+			error = 'Please provide a description';
+			return;
+		}
+
+		if (!currentUnit) {
+			error = 'No unit assigned';
+			return;
+		}
+
+		try {
+			const response = await fetch(`${API_URL}/maintenance`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				body: JSON.stringify({
+					description: description.trim(),
+					unitId: currentUnit.id
+				})
+			});
+
+			if (!response.ok) throw new Error('Failed to create request');
+
+			const newRequest = await response.json();
+			console.log(newRequest);
+			requests = [{ ...newRequest, createdAt: new Date(newRequest.createdAt) }, ...requests];
+			description = '';
+			error = null;
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to submit request';
+		}
+	}
+
+	const recentRequest = requests.sort(
+		(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+	)[0];
 </script>
 
 <div class="dashboard">
 	<div class="box notifications">
-		<h2>Notification</h2>
+		<h2>Notifications</h2>
 		<ul>
-			<li class="notification-item">
-				<span>Your request is now being processed by the landlord.</span>
-				<span class="notification-date">Dec 17, 2024</span>
-			</li>
-			<li class="notification-item">
-				<span>Your request is now being processed by the landlord.</span>
-				<span class="notification-date">Dec 17, 2024</span>
-			</li>
-			<li class="notification-item">
-				<span>Congratulations! Your booking has been approved by the landlord.</span>
-				<span class="notification-date">Aug 06, 2024</span>
-			</li>
+			{#each $notifications as notification (notification.id)}
+				<li class="notification-item">
+					<span>{notification.message}</span>
+					<span class="notification-date">
+						{new Date(notification.createdAt).toLocaleDateString()}
+					</span>
+				</li>
+			{/each}
 		</ul>
 	</div>
 
-	<div class="box maintenance">
-		<h2>Request Maintenance</h2>
-		<div class="form-container">
-			<div class="row">
-				<div class="label">To:</div>
-				<div class="input"><span>Landlord</span></div>
-			</div>
-			<div class="row">
-				<div class="label">Date:</div>
-				<div class="input">
-					<span
-						>{currentDate.toLocaleDateString('en-US', {
-							weekday: 'long',
-							year: 'numeric',
-							month: 'long',
-							day: 'numeric'
-						})}</span
-					>
+	{#if isLoading}
+		<div class="loading">Loading profile...</div>
+	{:else if error}
+		<div class="error">{error}</div>
+	{:else if profile}
+		<div class="profile-container">
+			<div class="profile-header">
+				<div class="profile-avatar">
+					{profile.firstName[0]}{profile.lastName[0]}
+				</div>
+				<div class="profile-info">
+					<h1>{profile.firstName} {profile.lastName}</h1>
+					<p>{profile.address || 'No address provided'}</p>
 				</div>
 			</div>
-			<div class="row">
-				<div class="label">Unit:</div>
-				<div class="input"><span>Unit 101</span></div>
-			</div>
-			<textarea placeholder="Write your request here..."></textarea>
-			<button type="submit">Send</button>
-		</div>
-	</div>
 
-	<div class="box my-rent">
-		<h2>My Rent</h2>
-		<div class="calendar-container">
-			<div class="calendar-header">
-				<button on:click={previousMonth}>&lt;</button>
-				<div class="calendar-title">{monthTitle}</div>
-				<button on:click={nextMonth}>&gt;</button>
+			<div class="container">
+				<h1>Maintenance Requests</h1>
+
+				{#if loading}
+					<div class="loading">Loading...</div>
+				{:else}
+					<form on:submit={submitMaintenanceRequest} class="form">
+						<div class="form-group">
+							<div class="row">
+								<div class="label">Date:</div>
+								<div class="input">
+									<span>
+										{new Date().toLocaleDateString('en-US', {
+											weekday: 'long',
+											year: 'numeric',
+											month: 'long',
+											day: 'numeric'
+										})}
+									</span>
+								</div>
+							</div>
+							<div class="row">
+								<div class="label">Unit:</div>
+								<div class="input">
+									<span>{currentUnit ? currentUnit.title : 'No unit assigned'}</span>
+								</div>
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label for="description" class="form-label">Description</label>
+							<textarea
+								id="description"
+								bind:value={description}
+								required
+								class="form-textarea"
+								rows="4"
+							/>
+						</div>
+
+						{#if error}
+							<div class="error">{error}</div>
+						{/if}
+
+						<button type="submit" class="btn" disabled={!description.trim() || !currentUnit}>
+							Submit Request
+						</button>
+					</form>
+
+					<div class="request-list">
+						{#if recentRequest}
+							<div class="request-card">
+								<div class="request-header">
+									<div class="request-title">
+										Request #{recentRequest.id.slice(0, 8)}
+									</div>
+									<span>{recentRequest.status}</span>
+								</div>
+								<div class="request-description">
+									{recentRequest.description}
+								</div>
+							</div>
+						{/if}
+					</div>
+				{/if}
 			</div>
-			<table class="visual-calendar">
-				<thead>
-					<tr>
-						<th>Sun</th>
-						<th>Mon</th>
-						<th>Tue</th>
-						<th>Wed</th>
-						<th>Thu</th>
-						<th>Fri</th>
-						<th>Sat</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each calendarDates as row}
-						<tr>
-							{#each row as day}
-								<td
-									class="
-        {day !== null &&
-									day === currentDate.getDate() &&
-									currentMonth === currentDate.getMonth() &&
-									currentYear === currentYear
-										? 'active'
-										: ''}
-    {day !== null &&
-									day === selectedDate.day &&
-									currentMonth === selectedDate.month &&
-									currentYear === selectedDate.year
-										? 'selected'
-										: ''}
-"
-									on:click={() => selectDate(day)}
-								>
-									{day || ''}
-								</td>
-							{/each}
-						</tr>
-					{/each}
-				</tbody>
-			</table>
 		</div>
-		<table>
-			<thead>
-				<tr>
-					<th>Date</th>
-					<th>Details</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>December 1, 2024</td>
-					<td>Payment Due</td>
-				</tr>
-				<tr>
-					<td>December 5, 2024</td>
-					<td>Late Fee Charged</td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
+	{/if}
+
+	{#if isEditModalOpen}
+		<div class="modal" on:click={() => (isEditModalOpen = false)}>
+			<div class="modal-content" on:click|stopPropagation>
+				<div class="modal-header">
+					<h2>Edit Profile</h2>
+				</div>
+				<div class="modal-body">
+					<form class="modal-form" on:submit|preventDefault={saveProfile}>
+						<div class="form-group">
+							<label for="firstName">First Name</label>
+							<input
+								type="text"
+								id="firstName"
+								class="form-input"
+								bind:value={editedProfile.firstName}
+								required
+							/>
+						</div>
+						<div class="form-group">
+							<label for="lastName">Last Name</label>
+							<input
+								type="text"
+								id="lastName"
+								class="form-input"
+								bind:value={editedProfile.lastName}
+								required
+							/>
+						</div>
+						<div class="form-group">
+							<label for="phone">Phone Number</label>
+							<input type="tel" id="phone" class="form-input" bind:value={editedProfile.phone} />
+						</div>
+						<div class="form-group">
+							<label for="address">Address</label>
+							<input
+								type="text"
+								id="address"
+								class="form-input"
+								bind:value={editedProfile.address}
+							/>
+						</div>
+						<div class="modal-actions">
+							<button type="button" class="btn-cancel" on:click={() => (isEditModalOpen = false)}>
+								Cancel
+							</button>
+							<button type="submit" class="btn-save"> Save Changes </button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
-	/* Base styles for the entire application */
+	.profile-container {
+		max-width: 1536px;
+		margin: 2rem auto;
+		background: linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%);
+		border-radius: 12px;
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+		overflow: hidden;
+		width: 100%;
+	}
+
+	.profile-header {
+		display: flex;
+		align-items: center;
+		background: linear-gradient(to right, #4e6d9c, #2c3e50);
+		color: white;
+		padding: 1.5rem;
+	}
+
+	.profile-avatar {
+		width: 100px;
+		height: 100px;
+		border-radius: 50%;
+		background-color: rgba(255, 255, 255, 0.2);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-right: 1.5rem;
+		border: 3px solid rgba(255, 255, 255, 0.3);
+		font-size: 2rem;
+		font-weight: bold;
+	}
+
+	.profile-info {
+		flex-grow: 1;
+	}
+
+	.profile-info h1 {
+		margin: 0;
+		font-size: 1.8rem;
+		font-weight: 600;
+	}
+
+	.profile-info p {
+		margin: 0.5rem 0 0;
+		opacity: 0.8;
+	}
+
+	.units-section {
+		padding: 1.5rem;
+	}
+
+	.unit-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+		gap: 1rem;
+	}
+
+	.unit-card {
+		background: white;
+		border-radius: 8px;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		overflow: hidden;
+		transition: transform 0.3s ease;
+	}
+
+	.unit-card:hover {
+		transform: translateY(-5px);
+	}
+
+	.unit-image {
+		width: 100%;
+		height: 200px;
+		object-fit: cover;
+	}
+
+	.unit-content {
+		padding: 1rem;
+	}
+
+	.unit-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 0.5rem;
+	}
+
+	.status-badge {
+		padding: 0.25rem 0.5rem;
+		border-radius: 4px;
+		font-size: 0.8rem;
+		font-weight: bold;
+	}
+
+	.status-available {
+		background-color: #4caf50;
+		color: white;
+	}
+
+	.status-occupied {
+		background-color: #ff9800;
+		color: white;
+	}
+
+	.status-maintenance {
+		background-color: #f44336;
+		color: white;
+	}
+
+	.loading,
+	.error {
+		text-align: center;
+		padding: 2rem;
+		color: #666;
+	}
+	.edit-button {
+		background-color: #4e6d9c;
+		color: white;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: 4px;
+		cursor: pointer;
+		transition: background-color 0.3s ease;
+	}
+
+	.edit-button:hover {
+		background-color: #2c3e50;
+	}
+
+	.modal {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: rgba(0, 0, 0, 0.5);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 1000;
+	}
+
+	.modal-content {
+		background: white;
+		padding: 2rem;
+		border-radius: 8px;
+		width: 100%;
+		max-width: 500px;
+		max-height: 80%;
+		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.modal-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		height: 12px;
+	}
+
+	.modal-form {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.form-group {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.form-input {
+		padding: 0.5rem;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+	}
+
+	.modal-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 1rem;
+		margin-top: 1rem;
+	}
+
+	.btn-save {
+		background-color: #4caf50;
+		color: white;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: 4px;
+		cursor: pointer;
+	}
+
+	.btn-cancel {
+		background-color: #f44336;
+		color: white;
+		border: none;
+		padding: 0.5rem 1rem;
+		border-radius: 4px;
+		cursor: pointer;
+	}
+
+	.modal-body {
+	}
 	:global(html, body) {
 		margin: 0;
 		padding: 0;
@@ -222,15 +577,150 @@
 
 	/* Dashboard Grid Layout */
 	.dashboard {
-		display: grid;
-		grid-template-areas:
-			'notifications my-rent'
-			'maintenance my-rent';
+		display: flex;
+		width: 100%;
 		grid-template-columns: 3fr 1.5fr;
 		grid-template-rows: auto 1fr;
 		gap: 1rem;
 		height: 100vh;
 		padding: 1rem;
+	}
+
+	.container {
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: 2rem;
+	}
+
+	h1 {
+		color: #2d3748;
+		margin-bottom: 2rem;
+		font-size: 2rem;
+		font-weight: 600;
+	}
+
+	.loading {
+		text-align: center;
+		padding: 2rem;
+		color: #4a5568;
+	}
+
+	.form {
+		background: #fff;
+		padding: 1.5rem;
+		border-radius: 0.5rem;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		margin-bottom: 2rem;
+	}
+
+	.form-group {
+		margin-bottom: 1.5rem;
+	}
+
+	.row {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.label {
+		font-weight: 500;
+		color: #4a5568;
+		min-width: 80px;
+	}
+
+	.form-label {
+		display: block;
+		margin-bottom: 0.5rem;
+		font-weight: 500;
+		color: #4a5568;
+	}
+
+	.form-textarea {
+		width: 100%;
+		padding: 0.75rem;
+		border: 1px solid #e2e8f0;
+		border-radius: 0.375rem;
+		resize: vertical;
+		min-height: 100px;
+	}
+
+	.form-textarea:focus {
+		outline: none;
+		border-color: #4299e1;
+		box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+	}
+
+	.error {
+		color: #e53e3e;
+		margin-bottom: 1rem;
+		padding: 0.5rem;
+		background: #fff5f5;
+		border-radius: 0.25rem;
+	}
+
+	.btn {
+		background: #4299e1;
+		color: white;
+		padding: 0.75rem 1.5rem;
+		border-radius: 0.375rem;
+		border: none;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background-color 0.2s;
+	}
+
+	.btn:hover {
+		background: #3182ce;
+	}
+
+	.btn:disabled {
+		background: #a0aec0;
+		cursor: not-allowed;
+	}
+
+	.request-list {
+		display: grid;
+		gap: 1.5rem;
+	}
+
+	.request-card {
+		background: white;
+		border-radius: 0.5rem;
+		padding: 1.5rem;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	}
+
+	.request-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		margin-bottom: 1rem;
+	}
+
+	.request-title {
+		font-weight: 600;
+		color: #2d3748;
+		margin-bottom: 0.25rem;
+	}
+
+	.tenant-info {
+		color: #718096;
+		font-size: 0.875rem;
+	}
+
+	.status-select {
+		padding: 0.5rem;
+		border: 1px solid #e2e8f0;
+		border-radius: 0.375rem;
+		background: white;
+		color: #4a5568;
+		font-size: 0.875rem;
+	}
+
+	.request-description {
+		color: #4a5568;
+		line-height: 1.5;
 	}
 
 	/* General Box Styling */
@@ -243,8 +733,8 @@
 
 	/* Notifications Section */
 	.notifications {
-		grid-area: notifications;
 		padding: 1.5rem;
+		width: 100%;
 	}
 
 	.notifications ul {
