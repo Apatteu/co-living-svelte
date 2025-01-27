@@ -1,50 +1,18 @@
 <script lang="ts">
-  import { Card, Button } from 'flowbite-svelte';
-  import { ArrowRightOutline } from 'flowbite-svelte-icons';
-  import { SearchOutline } from 'flowbite-svelte-icons';
-  import { Carousel } from 'flowbite-svelte';
+  import { onMount } from 'svelte';
+  import { Card, Button, Carousel } from 'flowbite-svelte';
+  import { ArrowRightOutline, SearchOutline } from 'flowbite-svelte-icons';
+  import unitService, { type Unit } from '../../../services/unit.service';
 
-  // Carousel images type
-  type CarouselImage = {
-    src: string;
-    alt: string;
-  };
+  interface UnitFilters {
+    minPrice?: number;
+    maxPrice?: number;
+    rooms?: number;
+    location?: string;
+    amenities?: string[];
+  }
 
-  let images: CarouselImage[] = [
-    { src: '/image/A.jpg', alt: 'Image 1' },
-    { src: '/image/B.jpg', alt: 'Image 2' },
-    { src: '/image/C.jpg', alt: 'Image 3' }
-  ];
-
-  // State for dropdown visibility
-  let showDropdown = false;
-
-  // Apartment card data
-  const apartments = [
-    {
-      title: 'Noteworthy technology acquisitions 2021',
-      description: 'Here are the biggest enterprise technology acquisitions of 2021 so far.',
-      price: '₱8,000 – ₱15,000',
-      img: '/image/B1.jpg',
-      rating: 4
-    },
-    {
-      title: 'Luxury Apartment in the City Center',
-      description: 'A beautiful apartment located in the heart of the city with modern amenities.',
-      price: '₱20,000 – ₱25,000',
-      img: '/image/B2.jpg',
-      rating: 5
-    },
-    {
-      title: 'Cozy Studio with Scenic Views',
-      description: 'A cozy and compact studio apartment with breathtaking views of the skyline.',
-      price: '₱10,000 – ₱12,000',
-      img: '/image/building.jpg',
-      rating: 3
-    }
-  ];
-
-  // Dropdown options without "Parking"
+  // Dropdown sections configuration
   const dropdownSections = [
     {
       title: 'Room Type',
@@ -74,9 +42,9 @@
     {
       title: 'Amenities',
       options: [
-        'Laundry Facility (In-unit shared)',
-        'Outdoor Space (Balcony, Garden)',
-        'Furnished Room/Apartment',
+        'Laundry Facility',
+        'Outdoor Space',
+        'Furnished Room',
         'High-Speed Wifi',
         'Kitchen Access',
         'Air Conditioning'
@@ -103,7 +71,194 @@
       isRadio: true
     }
   ];
+
+  let units: Unit[] = [];
+  let loading = false;
+  let error: string | null = null;
+  let showDropdown = false;
+
+  let searchQuery = '';
+  let filters: UnitFilters = {};
+
+  function debounce<F extends (...args: any[]) => void>(
+    fn: F,
+    delay: number
+  ): (...args: Parameters<F>) => void {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    return (...args: Parameters<F>) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  async function fetchUnits() {
+    loading = true;
+    error = null;
+    try {
+      const searchFilters = {
+        ...filters,
+        ...(searchQuery ? { searchTerm: searchQuery } : {})
+      };
+      units = await unitService.getUnits(searchFilters);
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Failed to fetch units';
+    } finally {
+      loading = false;
+    }
+  }
+
+  const debouncedFetch = debounce(fetchUnits, 300);
+
+  function handleFilterChange(section: string, value: string, checked: boolean) {
+    switch (section) {
+      case 'Monthly Rent':
+        const [min, max] = value
+          .split(' - ')
+          .map(price => parseInt(price.replace(/[₱,]/g, '')));
+        
+        filters = {
+          ...filters,
+          minPrice: checked ? min : undefined,
+          maxPrice: checked ? max : undefined
+        };
+        break;
+
+      case 'Amenities':
+        const currentAmenities = filters.amenities || [];
+        filters = {
+          ...filters,
+          amenities: checked 
+            ? [...currentAmenities, value]
+            : currentAmenities.filter(a => a !== value)
+        };
+        break;
+
+      case 'Room Type':
+        filters = {
+          ...filters,
+          rooms: checked ? getRoomCount(value) : undefined
+        };
+        break;
+
+      case 'Barangay':
+        filters = {
+          ...filters,
+          location: checked ? value : undefined
+        };
+        break;
+    }
+
+    fetchUnits();
+  }
+
+  function getRoomCount(roomType: string): number {
+    switch (roomType) {
+      case 'Studio Apartment':
+        return 0;
+      case 'Bedspace':
+        return 1;
+      case 'Dormitory Type':
+        return 1;
+      case 'Entire Unit':
+        return 2;
+      default:
+        return 2;
+    }
+  }
+
+  function formatPrice(amount: number): string {
+    return `₱${amount.toLocaleString()}`;
+  }
+
+  function handleSearch() {
+    debouncedFetch();
+  }
+
+  onMount(fetchUnits);
 </script>
+
+<div class="search-bar">
+  <div class="dropdown-container">
+    <div class="dropdown-button" on:click={() => (showDropdown = !showDropdown)} tabindex="0">
+      All Categories ⮟
+    </div>
+    
+    {#if showDropdown}
+      <div class="dropdown-content">
+        {#each dropdownSections as section}
+          <div class="dropdown-section">
+            <div class="dropdown-section-title">{section.title}</div>
+            {#each section.options as option}
+              <label>
+                {#if section.isRadio}
+                  <input
+                    type="radio"
+                    name={section.title}
+                    on:change={(e) => handleFilterChange(section.title, option, e.currentTarget.checked)}
+                  />
+                {:else}
+                  <input
+                    type="checkbox"
+                    on:change={(e) => handleFilterChange(section.title, option, e.currentTarget.checked)}
+                  />
+                {/if}
+                {option}
+              </label>
+            {/each}
+          </div>
+        {/each}
+      </div>
+    {/if}
+  </div>
+
+  <div class="input-wrapper">
+    <input
+      type="text"
+      placeholder="Search Units..."
+      bind:value={searchQuery}
+      on:input={handleSearch}
+    />
+    <button on:click={fetchUnits}>
+      <SearchOutline class="w-5 h-5" />
+    </button>
+  </div>
+</div>
+
+<!-- Loading and Error States -->
+{#if loading}
+  <div class="flex justify-center p-4">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+  </div>
+{:else if error}
+  <div class="text-red-500 p-4 text-center">{error}</div>
+{/if}
+
+<!-- Units Grid -->
+<div class="cards-container">
+  {#each units as unit}
+    <Card
+      style="background-color: white; border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px;"
+    >
+      <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900">
+        {unit.title}
+      </h5>
+      <p class="mb-3 font-normal text-gray-600 leading-tight">
+        {unit.description}
+      </p>
+      <div class="mb-2">
+        <p class="text-sm text-gray-600">{unit.location.address}, {unit.location.city}</p>
+        <p class="text-sm text-gray-600">Rooms: {unit.rooms}</p>
+      </div>
+      <div class="card-footer">
+        <p class="text-gray-900 font-bold">{formatPrice(unit.rentAmount)}</p>
+        <Button style="background-color: #ff6a00" href={`/units/${unit.id}`}>
+          View Details
+          <ArrowRightOutline class="w-6 h-6 ms-2 text-white" />
+        </Button>
+      </div>
+    </Card>
+  {/each}
+</div>
 
 <style>
  /* Search Bar */
@@ -299,91 +454,3 @@
 }
 
 </style>
-
-<!-- Search Bar -->
-<div class="search-bar">
-  <!-- Dropdown -->
-  <div class="dropdown-container">
-    <div class="dropdown-button" on:click={() => (showDropdown = !showDropdown)} tabindex="0">
-      All Categories ⮟
-    </div>
-    
-
-    {#if showDropdown}
-      <div class="dropdown-content">
-        {#each dropdownSections as section}
-          <div class="dropdown-section {section.title.toLowerCase()}">
-            <div class="dropdown-section-title">{section.title}</div>
-            {#each section.options as option}
-              <label>
-                {#if section.isRadio}
-                  <input type="radio" name={section.title} />
-                {:else}
-                  <input type="checkbox" />
-                {/if}
-                {option}
-              </label>
-            {/each}
-          </div>
-        {/each}
-      </div>
-    {/if}
-  </div>
-
-  <div class="input-wrapper">
-    <input type="text" placeholder="Search Units..." />
-    <button>
-      <SearchOutline class="w-5 h-5" />
-    </button>
-  </div>
-</div>
-
-<!-- Carousel Component -->
-<div class="carousel-container">
-  <Carousel {images} let:Controls>
-    {#if !showDropdown} <!-- Only show controls when dropdown is not active -->
-      <Controls />
-    {/if}
-  </Carousel>
-</div>
-<!-- Apartment Cards -->
-<div class="cards-container">
-  {#each apartments as apartment}
-    <Card
-      img={apartment.img}
-      style="background-color: white; border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px;"
-    >
-      <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900">
-        {apartment.title}
-      </h5>
-      <p class="mb-3 font-normal text-gray-600 leading-tight">
-        {apartment.description}
-      </p>
-      <div class="flex items-center mb-2">
-        {#each Array(5).fill(0) as _, i}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill={i < apartment.rating ? 'gold' : 'none'}
-            viewBox="0 0 24 24"
-            stroke="gold"
-            class="w-5 h-5"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-            />
-          </svg>
-        {/each}
-      </div>
-      <div class="card-footer">
-        <p class="text-gray-900 font-bold">{apartment.price}</p>
-        <Button style="background-color: #ff6a00">
-          Read more
-          <ArrowRightOutline class="w-6 h-6 ms-2 text-white" />
-        </Button>
-      </div>
-    </Card>
-  {/each}
-</div>
